@@ -1,8 +1,8 @@
-# Ohara GPT
+
 
 <div align="center">
 
-*Offline · Privat · Embedded C++ Inference*
+# Ohara GPT
 
 </div>
 
