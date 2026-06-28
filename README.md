@@ -1,8 +1,10 @@
-
+# Ohara GPT
 
 <div align="center">
 
-# Ohara GPT
+**🌊 Ohara GPT** — Local AI Desktop Application
+
+*Offline · Privat · Embedded C++ Inference*
 
 </div>
 
