@@ -103,12 +103,11 @@ ohara/
 │   │   ├── hardware_detector.* # CPU/RAM/GPU/Disk detection
 │   │   └── document_processor.*# Document → FTS5 indexing for RAG
 │   └── qml/
-│       └── main.qml            # Complete enterprise GUI
-└── ohara-backend/              # [Deprecated] Python backend (reference only)
+│       └── main.qml            # Complete GUI
 ```
 
 **Key Design Decisions:**
-- **Fully embedded** — No separate Python process. All inference runs in-process via llama.cpp C API
+- **Fully embedded** — All inference runs in-process via llama.cpp C API
 - **SQLite FTS5** — Replaced Weaviate (~300MB RAM) with lightweight full-text search
 - **Qt Signals/Slots** — Thread-safe communication between inference thread and GUI
 - **Cross-platform** — Windows, macOS, Linux from a single codebase
