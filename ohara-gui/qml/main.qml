@@ -13,7 +13,7 @@ Window {
     minimumHeight: 600
     visible: true
     title: "Ohara GPT"
-    color: "#06080f"
+    color: theme.bgMain
 
     // ================ STATE ================
     property double ramGB: HardwareDetector.totalRamBytes / (1024.0 * 1024.0 * 1024.0)
@@ -28,6 +28,37 @@ Window {
     property string selectedImagePath: ""
     property string selectedImageBase64: ""
     property string currentSystemPrompt: Settings.defaultSystemPrompt
+
+    // ================ THEME ================
+    property bool isDark: Settings.theme === "dark" || Settings.theme === "" // default to dark
+    QtObject {
+        id: theme
+        property color bgMain: isDark ? "#06080f" : "#f8fafc"
+        property color bgPanel: isDark ? "#0a0e1a" : "#ffffff"
+        property color bgPanelElevated: isDark ? "#0f1629" : "#f1f5f9"
+        property color bgItem: isDark ? "#111827" : "#e2e8f0"
+        property color bgItemHover: isDark ? "#1e293b" : "#cbd5e1"
+        property color bgActive: isDark ? "#1e3a5f" : "#bfdbfe"
+
+        property color border: isDark ? "#1e293b" : "#cbd5e1"
+        property color borderFocus: isDark ? "#3b82f6" : "#2563eb"
+
+        property color textMain: isDark ? "#f1f5f9" : "#0f172a"
+        property color textSecondary: isDark ? "#94a3b8" : "#475569"
+        property color textMuted: isDark ? "#64748b" : "#94a3b8"
+        property color textAccent: isDark ? "#60a5fa" : "#3b82f6"
+
+        property color primary: isDark ? "#3b82f6" : "#2563eb"
+        property color primaryHover: isDark ? "#2563eb" : "#1d4ed8"
+
+        property color success: isDark ? "#10b981" : "#059669"
+        property color successBg: isDark ? "#065f46" : "#d1fae5"
+        property color warning: isDark ? "#f59e0b" : "#d97706"
+        property color warningBg: isDark ? "#92400e" : "#fef3c7"
+        property color danger: isDark ? "#ef4444" : "#dc2626"
+        property color dangerBg: isDark ? "#7f1d1d" : "#fee2e2"
+        property color dangerHover: isDark ? "#991b1b" : "#b91c1c"
+    }
     property string currentPersonality: "general"
 
     property bool sidebarVisible: root.width >= 900
@@ -142,6 +173,13 @@ Window {
 
     // ================ SIGNAL HANDLERS ================
     Connections {
+
+        target: VoiceManager
+        function onVoiceProcessed(transcription) {
+            inputField.text = transcription;
+        }
+    }
+    Connections {
         target: InferenceEngine
 
         function onTokenGenerated(token) {
@@ -249,7 +287,7 @@ Window {
         id: onboardingComponent
 
         Rectangle {
-            color: "#06080f"
+            color: theme.bgMain
 
             ColumnLayout {
                 anchors.centerIn: parent
@@ -266,7 +304,7 @@ Window {
                             width: onboardingStep >= index ? 32 : 10
                             height: 10
                             radius: 5
-                            color: onboardingStep >= index ? "#3b82f6" : "#1e293b"
+                            color: onboardingStep >= index ? theme.primary : theme.bgItemHover
                             Behavior on width { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
                             Behavior on color { ColorAnimation { duration: 250 } }
                         }
@@ -295,7 +333,7 @@ Window {
 
                     Text {
                         text: t("skip")
-                        color: "#64748b"
+                        color: theme.textMuted
                         font.pixelSize: 14
                         visible: onboardingStep < 3
                         MouseArea {
@@ -315,7 +353,7 @@ Window {
                         width: 120
                         height: 44
                         radius: 22
-                        color: "#3b82f6"
+                        color: theme.primary
                         visible: onboardingStep > 0
 
                         Text {
@@ -339,8 +377,8 @@ Window {
                         height: 44
                         radius: 22
                         gradient: Gradient {
-                            GradientStop { position: 0; color: "#3b82f6" }
-                            GradientStop { position: 1; color: "#2563eb" }
+                            GradientStop { position: 0; color: theme.primary }
+                            GradientStop { position: 1; color: theme.primaryHover }
                         }
 
                         Text {
@@ -383,14 +421,14 @@ Window {
             }
             Text {
                 text: t("welcome_title")
-                color: "#f1f5f9"
+                color: theme.textMain
                 font.pixelSize: 28
                 font.bold: true
                 Layout.alignment: Qt.AlignHCenter
             }
             Text {
                 text: t("welcome_subtitle")
-                color: "#94a3b8"
+                color: theme.textSecondary
                 font.pixelSize: 16
                 Layout.alignment: Qt.AlignHCenter
                 horizontalAlignment: Text.AlignHCenter
@@ -408,7 +446,7 @@ Window {
 
             Text {
                 text: "🔍 " + t("hardware_detected")
-                color: "#f1f5f9"
+                color: theme.textMain
                 font.pixelSize: 22
                 font.bold: true
                 Layout.alignment: Qt.AlignHCenter
@@ -427,15 +465,15 @@ Window {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 52
                     radius: 12
-                    color: "#0f1629"
-                    border.color: "#1e293b"
+                    color: theme.bgPanelElevated
+                    border.color: theme.border
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.margins: 14
                         Text { text: modelData.icon; font.pixelSize: 20 }
-                        Text { text: modelData.label; color: "#94a3b8"; font.pixelSize: 14; Layout.fillWidth: true }
-                        Text { text: modelData.value; color: "#e2e8f0"; font.pixelSize: 14; font.bold: true }
+                        Text { text: modelData.label; color: theme.textSecondary; font.pixelSize: 14; Layout.fillWidth: true }
+                        Text { text: modelData.value; color: theme.textMain; font.pixelSize: 14; font.bold: true }
                     }
                 }
             }
@@ -444,14 +482,14 @@ Window {
                 Layout.fillWidth: true
                 height: 48
                 radius: 12
-                color: "#0a2540"
-                border.color: "#10b981"
+                color: theme.bgPanel
+                border.color: theme.success
 
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: 14
                     Text { text: "✨"; font.pixelSize: 18 }
-                    Text { text: t("recommended") + ": " + HardwareDetector.recommendedModel; color: "#10b981"; font.pixelSize: 13; font.bold: true }
+                    Text { text: t("recommended") + ": " + HardwareDetector.recommendedModel; color: theme.success; font.pixelSize: 13; font.bold: true }
                 }
             }
         }
@@ -465,7 +503,7 @@ Window {
 
             Text {
                 text: "📦 " + t("select_model")
-                color: "#f1f5f9"
+                color: theme.textMain
                 font.pixelSize: 22
                 font.bold: true
             }
@@ -481,8 +519,8 @@ Window {
                     width: ListView.view.width
                     height: 72
                     radius: 12
-                    color: modelData.compatible ? "#0f1629" : "#0a0d15"
-                    border.color: modelData.downloaded ? "#10b981" : (modelData.compatible ? "#1e293b" : "#111827")
+                    color: modelData.compatible ? theme.bgPanelElevated : theme.bgPanel
+                    border.color: modelData.downloaded ? theme.success : (modelData.compatible ? theme.bgItemHover : theme.bgItem)
                     opacity: modelData.compatible ? 1.0 : 0.4
 
                     RowLayout {
@@ -493,16 +531,16 @@ Window {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 2
-                            Text { text: modelData.name; color: "#e2e8f0"; font.pixelSize: 14; font.bold: true }
+                            Text { text: modelData.name; color: theme.textMain; font.pixelSize: 14; font.bold: true }
                             Text {
                                 text: modelData.type + " · " + t("min_ram") + ": " + modelData.minRamGB + "GB"
-                                color: "#64748b"; font.pixelSize: 11
+                                color: theme.textMuted; font.pixelSize: 11
                             }
                         }
 
                         Rectangle {
                             width: 80; height: 32; radius: 16
-                            color: modelData.downloaded ? "#065f46" : "#1e40af"
+                            color: modelData.downloaded ? theme.successBg : theme.primary
                             visible: modelData.compatible
 
                             Text {
@@ -537,14 +575,14 @@ Window {
             Text { text: "🚀"; font.pixelSize: 72; Layout.alignment: Qt.AlignHCenter }
             Text {
                 text: t("ready")
-                color: "#f1f5f9"
+                color: theme.textMain
                 font.pixelSize: 28
                 font.bold: true
                 Layout.alignment: Qt.AlignHCenter
             }
             Text {
                 text: t("ready_subtitle")
-                color: "#94a3b8"
+                color: theme.textSecondary
                 font.pixelSize: 16
                 Layout.alignment: Qt.AlignHCenter
                 horizontalAlignment: Text.AlignHCenter
@@ -561,7 +599,7 @@ Window {
         id: mainPageComponent
 
         Rectangle {
-            color: "#06080f"
+            color: theme.bgMain
 
             // ---- SIDEBAR ----
             Rectangle {
@@ -570,7 +608,7 @@ Window {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                color: "#0a0e1a"
+                color: theme.bgPanel
                 clip: true
                 visible: sidebarVisible
 
@@ -586,7 +624,7 @@ Window {
                         Layout.fillWidth: true
                         Text {
                             text: "🌊 Ohara GPT"
-                            color: "#f1f5f9"
+                            color: theme.textMain
                             font.pixelSize: 20
                             font.bold: true
                             Layout.fillWidth: true
@@ -594,9 +632,9 @@ Window {
                         // Settings gear
                         Rectangle {
                             width: 32; height: 32; radius: 8
-                            color: settingsArea.hovered ? "#1e293b" : "transparent"
+                            color: settingsArea.hovered ? theme.bgItemHover : "transparent"
                             property bool hovered: false
-                            Text { text: "⚙"; font.pixelSize: 16; anchors.centerIn: parent; color: "#94a3b8" }
+                            Text { text: "⚙"; font.pixelSize: 16; anchors.centerIn: parent; color: theme.textSecondary }
                             MouseArea {
                                 id: settingsArea
                                 anchors.fill: parent
@@ -616,8 +654,8 @@ Window {
                         height: 44
                         radius: 12
                         gradient: Gradient {
-                            GradientStop { position: 0; color: "#3b82f6" }
-                            GradientStop { position: 1; color: "#2563eb" }
+                            GradientStop { position: 0; color: theme.primary }
+                            GradientStop { position: 1; color: theme.primaryHover }
                         }
 
                         RowLayout {
@@ -637,7 +675,7 @@ Window {
                     // Chat History header
                     Text {
                         text: t("chat_history")
-                        color: "#64748b"
+                        color: theme.textMuted
                         font.pixelSize: 12
                         font.bold: true
                         Layout.topMargin: 8
@@ -657,8 +695,8 @@ Window {
                             width: ListView.view.width
                             height: 48
                             radius: 10
-                            color: currentSessionId === model.id ? "#1e293b" : (sessionHover.containsMouse ? "#111827" : "transparent")
-                            border.color: currentSessionId === model.id ? "#3b82f6" : "transparent"
+                            color: currentSessionId === model.id ? theme.bgItemHover : (sessionHover.containsMouse ? theme.bgItem : "transparent")
+                            border.color: currentSessionId === model.id ? theme.primary : "transparent"
                             border.width: currentSessionId === model.id ? 1 : 0
 
                             Behavior on color { ColorAnimation { duration: 150 } }
@@ -674,14 +712,14 @@ Window {
                                     spacing: 0
                                     Text {
                                         text: model.title
-                                        color: "#e2e8f0"
+                                        color: theme.textMain
                                         font.pixelSize: 13
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
                                     Text {
                                         text: (model.message_count || 0) + " msgs"
-                                        color: "#475569"
+                                        color: theme.textSecondary
                                         font.pixelSize: 10
                                     }
                                 }
@@ -689,9 +727,9 @@ Window {
                                 // Delete button
                                 Rectangle {
                                     width: 24; height: 24; radius: 6
-                                    color: delHover.containsMouse ? "#7f1d1d" : "transparent"
+                                    color: delHover.containsMouse ? theme.dangerBg : "transparent"
                                     visible: sessionHover.containsMouse
-                                    Text { text: "×"; color: "#ef4444"; font.pixelSize: 16; font.bold: true; anchors.centerIn: parent }
+                                    Text { text: "×"; color: theme.danger; font.pixelSize: 16; font.bold: true; anchors.centerIn: parent }
                                     MouseArea {
                                         id: delHover
                                         anchors.fill: parent
@@ -721,19 +759,19 @@ Window {
                         Text {
                             visible: sessionsModel.count === 0
                             text: t("no_sessions")
-                            color: "#475569"
+                            color: theme.textSecondary
                             font.pixelSize: 13
                             anchors.centerIn: parent
                         }
                     }
 
                     // Separator
-                    Rectangle { Layout.fillWidth: true; height: 1; color: "#1e293b" }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.bgItemHover }
 
                     // Models section
                     Text {
                         text: t("models")
-                        color: "#64748b"
+                        color: theme.textMuted
                         font.pixelSize: 12
                         font.bold: true
                     }
@@ -746,12 +784,73 @@ Window {
                         spacing: 6
                         model: ModelManager.getModelCatalog(ramGB)
 
+                header: Component {
+                    ColumnLayout {
+                        width: ListView.view ? ListView.view.width : 400
+                        spacing: 8
+                        // --- Custom Model Download ---
+                        Rectangle {
+                            width: ListView.view ? ListView.view.width : parent.width
+                            height: 120
+                            radius: 12
+                            color: theme.bgPanelElevated
+                            border.color: theme.border
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 16
+                                spacing: 8
+
+                                Text { text: "Custom HuggingFace Model"; color: theme.textMain; font.pixelSize: 14; font.bold: true }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    TextField {
+                                        id: customRepoIdDrawer
+                                        Layout.fillWidth: true
+                                        placeholderText: "Repo ID (e.g. bartowski/Llama-3-8B-Instruct-GGUF)"
+                                        color: theme.textMain
+                                        background: Rectangle { color: theme.bgItem; radius: 6; border.color: theme.border }
+                                    }
+
+                                    TextField {
+                                        id: customFilenameDrawer
+                                        Layout.fillWidth: true
+                                        placeholderText: "Filename (e.g. model.gguf)"
+                                        color: theme.textMain
+                                        background: Rectangle { color: theme.bgItem; radius: 6; border.color: theme.border }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignRight
+                                    width: 120; height: 32; radius: 16
+                                    color: ModelManager.downloading ? theme.textMuted : theme.primary
+
+                                    Text { text: "Download"; color: "white"; font.pixelSize: 12; font.bold: true; anchors.centerIn: parent }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        enabled: !ModelManager.downloading && customRepoIdDrawer.text.length > 0 && customFilenameDrawer.text.length > 0
+                                        onClicked: {
+                                            ModelManager.downloadModel(customRepoIdDrawer.text.trim(), customFilenameDrawer.text.trim(), "");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                         delegate: Rectangle {
                             width: ListView.view.width
                             height: 84
                             radius: 12
-                            color: activeFilename === modelData.filename ? "#1a2744" : (modelData.compatible ? "#0f1629" : "#080b14")
-                            border.color: activeFilename === modelData.filename ? "#3b82f6" : (modelData.downloaded ? "#10b981" : "#1e293b")
+                            color: activeFilename === modelData.filename ? theme.bgActive : (modelData.compatible ? theme.bgPanelElevated : theme.bgMain)
+                            border.color: activeFilename === modelData.filename ? theme.primary : (modelData.downloaded ? theme.success : theme.bgItemHover)
                             border.width: activeFilename === modelData.filename ? 2 : 1
                             opacity: modelData.compatible ? 1.0 : 0.45
 
@@ -766,7 +865,7 @@ Window {
                                     Layout.fillWidth: true
                                     Text {
                                         text: modelData.name
-                                        color: "#e2e8f0"
+                                        color: theme.textMain
                                         font.pixelSize: 13
                                         font.bold: true
                                         elide: Text.ElideRight
@@ -774,8 +873,8 @@ Window {
                                     }
                                     Rectangle {
                                         width: tagText.width + 10; height: 18; radius: 9
-                                        color: "#1e3a5f"
-                                        Text { id: tagText; text: modelData.type; color: "#60a5fa"; font.pixelSize: 9; font.bold: true; anchors.centerIn: parent }
+                                        color: theme.bgActive
+                                        Text { id: tagText; text: modelData.type; color: theme.textAccent; font.pixelSize: 9; font.bold: true; anchors.centerIn: parent }
                                     }
                                 }
 
@@ -783,7 +882,7 @@ Window {
                                     Layout.fillWidth: true
                                     Text {
                                         text: t("min_ram") + ": " + modelData.minRamGB + " GB"
-                                        color: "#64748b"
+                                        color: theme.textMuted
                                         font.pixelSize: 10
                                         Layout.fillWidth: true
                                     }
@@ -792,10 +891,10 @@ Window {
                                     Rectangle {
                                         width: 64; height: 26; radius: 13
                                         color: {
-                                            if (activeFilename === modelData.filename) return "#1e40af";
-                                            if (modelData.downloaded) return "#065f46";
-                                            if (ModelManager.downloading && ModelManager.downloadingModel === modelData.filename) return "#92400e";
-                                            return "#1e293b";
+                                            if (activeFilename === modelData.filename) return theme.primary;
+                                            if (modelData.downloaded) return theme.successBg;
+                                            if (ModelManager.downloading && ModelManager.downloadingModel === modelData.filename) return theme.warningBg;
+                                            return theme.bgItemHover;
                                         }
                                         visible: modelData.compatible
 
@@ -842,14 +941,14 @@ Window {
                                     Layout.fillWidth: true
                                     height: 3
                                     radius: 2
-                                    color: "#1e293b"
+                                    color: theme.bgItemHover
                                     visible: ModelManager.downloading && ModelManager.downloadingModel === modelData.filename
 
                                     Rectangle {
                                         width: parent.width * ModelManager.downloadProgress
                                         height: parent.height
                                         radius: 2
-                                        color: "#f59e0b"
+                                        color: theme.warning
                                         Behavior on width { NumberAnimation { duration: 200 } }
                                     }
                                 }
@@ -862,7 +961,7 @@ Window {
                         Layout.fillWidth: true
                         height: 36
                         radius: 8
-                        color: "#0f1629"
+                        color: theme.bgPanelElevated
 
                         RowLayout {
                             anchors.centerIn: parent
@@ -870,13 +969,13 @@ Window {
 
                             Rectangle {
                                 width: 50; height: 28; radius: 6
-                                color: Settings.language === "id" ? "#3b82f6" : "transparent"
+                                color: Settings.language === "id" ? theme.primary : "transparent"
                                 Text { text: "🇮🇩 ID"; color: "white"; font.pixelSize: 11; font.bold: true; anchors.centerIn: parent }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.language = "id" }
                             }
                             Rectangle {
                                 width: 50; height: 28; radius: 6
-                                color: Settings.language === "en" ? "#3b82f6" : "transparent"
+                                color: Settings.language === "en" ? theme.primary : "transparent"
                                 Text { text: "🇬🇧 EN"; color: "white"; font.pixelSize: 11; font.bold: true; anchors.centerIn: parent }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.language = "en" }
                             }
@@ -891,7 +990,7 @@ Window {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                color: "#06080f"
+                color: theme.bgMain
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -901,8 +1000,8 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 60
-                        color: "#0a0e1a"
-                        border.color: "#111827"
+                        color: theme.bgPanel
+                        border.color: theme.bgItem
                         border.width: 0
 
                         RowLayout {
@@ -913,9 +1012,9 @@ Window {
                             // Sidebar toggle (for small screens)
                             Rectangle {
                                 width: 36; height: 36; radius: 8
-                                color: sideToggle.containsMouse ? "#1e293b" : "transparent"
+                                color: sideToggle.containsMouse ? theme.bgItemHover : "transparent"
                                 visible: root.width < 900
-                                Text { text: "☰"; color: "#94a3b8"; font.pixelSize: 18; anchors.centerIn: parent }
+                                Text { text: "☰"; color: theme.textSecondary; font.pixelSize: 18; anchors.centerIn: parent }
                                 MouseArea {
                                     id: sideToggle
                                     anchors.fill: parent
@@ -931,13 +1030,13 @@ Window {
                                 spacing: 0
                                 Text {
                                     text: activeModelName || t("select_model_first")
-                                    color: "#e2e8f0"
+                                    color: theme.textMain
                                     font.pixelSize: 16
                                     font.bold: true
                                 }
                                 Text {
                                     text: currentPersonality !== "general" ? ("🎭 " + currentPersonality) : ""
-                                    color: "#64748b"
+                                    color: theme.textMuted
                                     font.pixelSize: 12
                                     visible: text !== ""
                                 }
@@ -947,7 +1046,7 @@ Window {
                             Rectangle {
                                 width: personIcon.width + 16
                                 height: 32; radius: 8
-                                color: personBtn.containsMouse ? "#1e293b" : "transparent"
+                                color: personBtn.containsMouse ? theme.bgItemHover : "transparent"
                                 Text { id: personIcon; text: "🎭"; font.pixelSize: 16; anchors.centerIn: parent }
                                 MouseArea {
                                     id: personBtn
@@ -961,7 +1060,7 @@ Window {
                             // Stop button
                             Rectangle {
                                 width: 70; height: 32; radius: 16
-                                color: "#dc2626"
+                                color: theme.danger
                                 visible: InferenceEngine.generating
                                 Text { text: "⏹ " + t("stop"); color: "white"; font.pixelSize: 12; font.bold: true; anchors.centerIn: parent }
                                 MouseArea {
@@ -988,7 +1087,7 @@ Window {
                         Text {
                             visible: chatModel.count === 0
                             text: "🌊\n\n" + t("welcome_title") + "\n" + t("welcome_subtitle")
-                            color: "#334155"
+                            color: theme.textMuted
                             font.pixelSize: 16
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
@@ -1010,11 +1109,11 @@ Window {
                                 anchors.left: isUser ? undefined : parent.left
 
                                 gradient: Gradient {
-                                    GradientStop { position: 0; color: isUser ? "#2563eb" : "#111827" }
-                                    GradientStop { position: 1; color: isUser ? "#1d4ed8" : "#0f1629" }
+                                    GradientStop { position: 0; color: isUser ? theme.primaryHover : theme.bgItem }
+                                    GradientStop { position: 1; color: isUser ? theme.primaryHover : theme.bgPanelElevated }
                                 }
 
-                                border.color: isUser ? "#3b82f6" : "#1e293b"
+                                border.color: isUser ? theme.primary : theme.bgItemHover
                                 border.width: 1
 
                                 ColumnLayout {
@@ -1026,14 +1125,14 @@ Window {
                                     // Sender label
                                     Text {
                                         text: isUser ? "You" : "Ohara"
-                                        color: isUser ? "#93c5fd" : "#60a5fa"
+                                        color: isUser ? theme.textAccent : theme.textAccent
                                         font.pixelSize: 11
                                         font.bold: true
                                     }
 
                                     Text {
                                         text: model.text
-                                        color: "#e2e8f0"
+                                        color: theme.textMain
                                         wrapMode: Text.WordWrap
                                         font.pixelSize: Settings.fontSize
                                         textFormat: Text.MarkdownText
@@ -1053,7 +1152,7 @@ Window {
                                     // Copy
                                     Rectangle {
                                         width: 28; height: 28; radius: 6
-                                        color: copyBtn.containsMouse ? "#334155" : "#1e293b"
+                                        color: copyBtn.containsMouse ? theme.textMuted : theme.bgItemHover
                                         Text { text: "📋"; font.pixelSize: 12; anchors.centerIn: parent }
                                         MouseArea {
                                             id: copyBtn
@@ -1070,7 +1169,7 @@ Window {
                                     // Delete
                                     Rectangle {
                                         width: 28; height: 28; radius: 6
-                                        color: delBtn.containsMouse ? "#334155" : "#1e293b"
+                                        color: delBtn.containsMouse ? theme.textMuted : theme.bgItemHover
                                         Text { text: "🗑️"; font.pixelSize: 12; anchors.centerIn: parent }
                                         MouseArea {
                                             id: delBtn
@@ -1099,14 +1198,14 @@ Window {
                         // Scroll to bottom button
                         Rectangle {
                             width: 40; height: 40; radius: 20
-                            color: "#1e293b"
-                            border.color: "#334155"
+                            color: theme.bgItemHover
+                            border.color: theme.textMuted
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
                             anchors.margins: 8
                             visible: !chatList.atYEnd && chatModel.count > 5
 
-                            Text { text: "↓"; color: "#94a3b8"; font.pixelSize: 18; anchors.centerIn: parent }
+                            Text { text: "↓"; color: theme.textSecondary; font.pixelSize: 18; anchors.centerIn: parent }
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
@@ -1126,7 +1225,7 @@ Window {
                             model: 3
                             Rectangle {
                                 width: 8; height: 8; radius: 4
-                                color: "#3b82f6"
+                                color: theme.primary
 
                                 SequentialAnimation on opacity {
                                     loops: Animation.Infinite
@@ -1138,7 +1237,7 @@ Window {
                             }
                         }
 
-                        Text { text: t("thinking"); color: "#64748b"; font.pixelSize: 12; font.italic: true }
+                        Text { text: t("thinking"); color: theme.textMuted; font.pixelSize: 12; font.italic: true }
                     }
 
                     // Image preview
@@ -1152,8 +1251,8 @@ Window {
 
                         Rectangle {
                             width: 56; height: 56; radius: 12
-                            color: "#111827"
-                            border.color: "#3b82f6"
+                            color: theme.bgItem
+                            border.color: theme.primary
 
                             Image {
                                 anchors.fill: parent; anchors.margins: 3
@@ -1162,7 +1261,7 @@ Window {
                             }
 
                             Rectangle {
-                                width: 18; height: 18; radius: 9; color: "#dc2626"
+                                width: 18; height: 18; radius: 9; color: theme.danger
                                 anchors.right: parent.right; anchors.top: parent.top; anchors.margins: -6
                                 Text { text: "×"; color: "white"; font.pixelSize: 12; font.bold: true; anchors.centerIn: parent }
                                 MouseArea {
@@ -1181,8 +1280,8 @@ Window {
                         height: Math.max(56, inputField.implicitHeight + 20)
                         Layout.maximumHeight: 180
                         radius: 28
-                        color: "#111827"
-                        border.color: inputField.activeFocus ? "#3b82f6" : "#1e293b"
+                        color: theme.bgItem
+                        border.color: inputField.activeFocus ? theme.primary : theme.bgItemHover
                         border.width: inputField.activeFocus ? 2 : 1
 
                         Behavior on border.color { ColorAnimation { duration: 200 } }
@@ -1198,7 +1297,7 @@ Window {
                             // Attach button
                             Rectangle {
                                 width: 36; height: 36; radius: 18
-                                color: attachBtn.containsMouse ? "#1e293b" : "transparent"
+                                color: attachBtn.containsMouse ? theme.bgItemHover : "transparent"
                                 Text { text: "📎"; font.pixelSize: 18; anchors.centerIn: parent }
                                 MouseArea {
                                     id: attachBtn
@@ -1218,12 +1317,12 @@ Window {
                                     id: inputField
                                     placeholderText: currentSessionId === 0 ? t("create_session_first") :
                                                      (!InferenceEngine.modelLoaded ? t("select_model_first") : t("type_message"))
-                                    color: "#e2e8f0"
+                                    color: theme.textMain
                                     font.pixelSize: 14
                                     wrapMode: TextArea.Wrap
                                     background: Rectangle { color: "transparent" }
                                     enabled: InferenceEngine.modelLoaded && !InferenceEngine.generating && currentSessionId !== 0
-                                    placeholderTextColor: "#475569"
+                                    placeholderTextColor: theme.textSecondary
 
                                     Keys.onReturnPressed: function(event) {
                                         if (event.modifiers & Qt.ShiftModifier) {
@@ -1238,12 +1337,32 @@ Window {
                             }
 
                             // Send button
-                            Rectangle {
+
+                                // --- Voice Recording Button ---
+                                Rectangle {
+                                    width: 40; height: 40; radius: 10
+                                    color: VoiceManager.isRecording ? theme.danger : theme.bgItem
+                                    border.color: theme.border
+                                    Text { text: "🎙"; anchors.centerIn: parent; font.pixelSize: 18 }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (VoiceManager.isRecording) {
+                                                VoiceManager.stopRecording();
+                                                VoiceManager.processVoice("");
+                                            } else {
+                                                VoiceManager.startRecording();
+                                            }
+                                        }
+                                    }
+                                }
+Rectangle {
                                 width: 44; height: 44; radius: 22
 
                                 gradient: Gradient {
-                                    GradientStop { position: 0; color: (InferenceEngine.modelLoaded && inputField.text.trim().length > 0 && !InferenceEngine.generating && currentSessionId !== 0) ? "#3b82f6" : "#1e293b" }
-                                    GradientStop { position: 1; color: (InferenceEngine.modelLoaded && inputField.text.trim().length > 0 && !InferenceEngine.generating && currentSessionId !== 0) ? "#2563eb" : "#1e293b" }
+                                    GradientStop { position: 0; color: (InferenceEngine.modelLoaded && inputField.text.trim().length > 0 && !InferenceEngine.generating && currentSessionId !== 0) ? theme.primary : theme.bgItemHover }
+                                    GradientStop { position: 1; color: (InferenceEngine.modelLoaded && inputField.text.trim().length > 0 && !InferenceEngine.generating && currentSessionId !== 0) ? theme.primaryHover : theme.bgItemHover }
                                 }
 
                                 Text {
@@ -1268,7 +1387,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 32
-                        color: "#080b14"
+                        color: theme.bgMain
 
                         RowLayout {
                             anchors.fill: parent
@@ -1281,19 +1400,19 @@ Window {
                                 spacing: 6
                                 Rectangle {
                                     width: 8; height: 8; radius: 4
-                                    color: InferenceEngine.modelLoaded ? "#10b981" : "#ef4444"
+                                    color: InferenceEngine.modelLoaded ? theme.success : theme.danger
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                                 Text {
                                     text: InferenceEngine.modelLoaded ? t("connected") : t("disconnected")
-                                    color: "#64748b"; font.pixelSize: 11
+                                    color: theme.textMuted; font.pixelSize: 11
                                 }
                             }
 
                             // Active model
                             Text {
                                 text: InferenceEngine.loadedModelName ? ("🤖 " + InferenceEngine.loadedModelName) : ""
-                                color: "#475569"; font.pixelSize: 11
+                                color: theme.textSecondary; font.pixelSize: 11
                                 visible: text !== ""
                             }
 
@@ -1302,20 +1421,20 @@ Window {
                             // Tokens/sec
                             Text {
                                 text: InferenceEngine.generating ? (InferenceEngine.tokensPerSecond.toFixed(1) + " " + t("tokens_per_sec")) : ""
-                                color: "#10b981"; font.pixelSize: 11; font.bold: true
+                                color: theme.success; font.pixelSize: 11; font.bold: true
                                 visible: InferenceEngine.generating
                             }
 
                             // RAM
                             Text {
                                 text: t("ram") + ": " + availRamGB.toFixed(1) + "/" + ramGB.toFixed(1) + " GB"
-                                color: "#475569"; font.pixelSize: 11
+                                color: theme.textSecondary; font.pixelSize: 11
                             }
 
                             // Download speed
                             Text {
                                 text: ModelManager.downloading ? ("📥 " + ModelManager.downloadSpeedMBps.toFixed(1) + " MB/s") : ""
-                                color: "#f59e0b"; font.pixelSize: 11; font.bold: true
+                                color: theme.warning; font.pixelSize: 11; font.bold: true
                                 visible: ModelManager.downloading
                             }
                         }
@@ -1334,9 +1453,9 @@ Window {
                 closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
                 background: Rectangle {
-                    color: "#0f1629"
+                    color: theme.bgPanelElevated
                     radius: 16
-                    border.color: "#1e293b"
+                    border.color: theme.border
                     border.width: 1
                 }
 
@@ -1347,7 +1466,7 @@ Window {
 
                     Text {
                         text: "🎭 " + t("personality")
-                        color: "#f1f5f9"
+                        color: theme.textMain
                         font.pixelSize: 16
                         font.bold: true
                     }
@@ -1363,8 +1482,8 @@ Window {
                             width: ListView.view.width
                             height: 56
                             radius: 10
-                            color: currentPersonality === modelData.id ? "#1a2744" : "#0a0e1a"
-                            border.color: currentPersonality === modelData.id ? "#3b82f6" : "#1e293b"
+                            color: currentPersonality === modelData.id ? theme.bgActive : theme.bgPanel
+                            border.color: currentPersonality === modelData.id ? theme.primary : theme.bgItemHover
 
                             RowLayout {
                                 anchors.fill: parent
@@ -1375,10 +1494,10 @@ Window {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 0
-                                    Text { text: modelData.name; color: "#e2e8f0"; font.pixelSize: 13; font.bold: true }
+                                    Text { text: modelData.name; color: theme.textMain; font.pixelSize: 13; font.bold: true }
                                     Text {
                                         text: modelData.prompt.substring(0, 50) + "..."
-                                        color: "#64748b"; font.pixelSize: 10
+                                        color: theme.textMuted; font.pixelSize: 10
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
@@ -1404,7 +1523,7 @@ Window {
                     // Custom prompt
                     Text {
                         text: t("system_prompt")
-                        color: "#64748b"
+                        color: theme.textMuted
                         font.pixelSize: 12
                         font.bold: true
                     }
@@ -1413,19 +1532,19 @@ Window {
                         Layout.fillWidth: true
                         height: 60
                         radius: 8
-                        color: "#0a0e1a"
-                        border.color: "#1e293b"
+                        color: theme.bgPanel
+                        border.color: theme.border
 
                         TextArea {
                             anchors.fill: parent
                             anchors.margins: 8
                             text: currentSystemPrompt
-                            color: "#e2e8f0"
+                            color: theme.textMain
                             font.pixelSize: 11
                             wrapMode: TextArea.Wrap
                             background: Rectangle { color: "transparent" }
                             placeholderText: "Custom system prompt..."
-                            placeholderTextColor: "#334155"
+                            placeholderTextColor: theme.textMuted
                             onTextChanged: {
                                 currentSystemPrompt = text;
                                 if (currentSessionId > 0) {
@@ -1449,8 +1568,8 @@ Window {
         edge: Qt.RightEdge
 
         background: Rectangle {
-            color: "#0a0e1a"
-            border.color: "#1e293b"
+            color: theme.bgPanel
+            border.color: theme.border
         }
 
         ColumnLayout {
@@ -1463,15 +1582,15 @@ Window {
                 Layout.fillWidth: true
                 Text {
                     text: "⚙ " + t("settings")
-                    color: "#f1f5f9"
+                    color: theme.textMain
                     font.pixelSize: 20
                     font.bold: true
                     Layout.fillWidth: true
                 }
                 Rectangle {
                     width: 32; height: 32; radius: 8
-                    color: closeBtn.containsMouse ? "#1e293b" : "transparent"
-                    Text { text: "×"; color: "#94a3b8"; font.pixelSize: 20; anchors.centerIn: parent }
+                    color: closeBtn.containsMouse ? theme.bgItemHover : "transparent"
+                    Text { text: "×"; color: theme.textSecondary; font.pixelSize: 20; anchors.centerIn: parent }
                     MouseArea {
                         id: closeBtn
                         anchors.fill: parent
@@ -1482,21 +1601,21 @@ Window {
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#1e293b" }
+            Rectangle { Layout.fillWidth: true; height: 1; color: theme.bgItemHover }
 
             // Language
             ColumnLayout {
                 spacing: 8
-                Text { text: "🌐 " + t("language"); color: "#94a3b8"; font.pixelSize: 13; font.bold: true }
+                Text { text: "🌐 " + t("language"); color: theme.textSecondary; font.pixelSize: 13; font.bold: true }
                 Row {
                     spacing: 8
                     Repeater {
                         model: [{"code": "id", "label": "🇮🇩 Bahasa Indonesia"}, {"code": "en", "label": "🇬🇧 English"}]
                         Rectangle {
                             width: 160; height: 40; radius: 10
-                            color: Settings.language === modelData.code ? "#1e3a5f" : "#111827"
-                            border.color: Settings.language === modelData.code ? "#3b82f6" : "#1e293b"
-                            Text { text: modelData.label; color: "#e2e8f0"; font.pixelSize: 13; anchors.centerIn: parent }
+                            color: Settings.language === modelData.code ? theme.bgActive : theme.bgItem
+                            border.color: Settings.language === modelData.code ? theme.primary : theme.bgItemHover
+                            Text { text: modelData.label; color: theme.textMain; font.pixelSize: 13; anchors.centerIn: parent }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.language = modelData.code }
                         }
                     }
@@ -1506,16 +1625,16 @@ Window {
             // Theme
             ColumnLayout {
                 spacing: 8
-                Text { text: "🎨 " + t("theme"); color: "#94a3b8"; font.pixelSize: 13; font.bold: true }
+                Text { text: "🎨 " + t("theme"); color: theme.textSecondary; font.pixelSize: 13; font.bold: true }
                 Row {
                     spacing: 8
                     Repeater {
                         model: [{"code": "dark", "label": "🌙 " + t("dark")}, {"code": "light", "label": "☀ " + t("light")}]
                         Rectangle {
                             width: 120; height: 40; radius: 10
-                            color: Settings.theme === modelData.code ? "#1e3a5f" : "#111827"
-                            border.color: Settings.theme === modelData.code ? "#3b82f6" : "#1e293b"
-                            Text { text: modelData.label; color: "#e2e8f0"; font.pixelSize: 13; anchors.centerIn: parent }
+                            color: Settings.theme === modelData.code ? theme.bgActive : theme.bgItem
+                            border.color: Settings.theme === modelData.code ? theme.primary : theme.bgItemHover
+                            Text { text: modelData.label; color: theme.textMain; font.pixelSize: 13; anchors.centerIn: parent }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.theme = modelData.code }
                         }
                     }
@@ -1525,7 +1644,7 @@ Window {
             // Font size
             ColumnLayout {
                 spacing: 8
-                Text { text: "🔤 " + t("font_size") + ": " + Settings.fontSize + "px"; color: "#94a3b8"; font.pixelSize: 13; font.bold: true }
+                Text { text: "🔤 " + t("font_size") + ": " + Settings.fontSize + "px"; color: theme.textSecondary; font.pixelSize: 13; font.bold: true }
                 Slider {
                     Layout.fillWidth: true
                     from: 10; to: 24; stepSize: 1
@@ -1534,13 +1653,13 @@ Window {
 
                     background: Rectangle {
                         x: parent.leftPadding; y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                        width: parent.availableWidth; height: 4; radius: 2; color: "#1e293b"
-                        Rectangle { width: parent.parent.visualPosition * parent.width; height: parent.height; radius: 2; color: "#3b82f6" }
+                        width: parent.availableWidth; height: 4; radius: 2; color: theme.bgItemHover
+                        Rectangle { width: parent.parent.visualPosition * parent.width; height: parent.height; radius: 2; color: theme.primary }
                     }
                     handle: Rectangle {
                         x: parent.leftPadding + parent.visualPosition * (parent.availableWidth - width)
                         y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                        width: 20; height: 20; radius: 10; color: "#3b82f6"; border.color: "#60a5fa"
+                        width: 20; height: 20; radius: 10; color: theme.primary; border.color: theme.textAccent
                     }
                 }
             }
@@ -1548,7 +1667,7 @@ Window {
             // Temperature
             ColumnLayout {
                 spacing: 8
-                Text { text: "🌡 " + t("temperature_label") + ": " + Settings.temperature.toFixed(1); color: "#94a3b8"; font.pixelSize: 13; font.bold: true }
+                Text { text: "🌡 " + t("temperature_label") + ": " + Settings.temperature.toFixed(1); color: theme.textSecondary; font.pixelSize: 13; font.bold: true }
                 Slider {
                     Layout.fillWidth: true
                     from: 0.0; to: 2.0; stepSize: 0.1
@@ -1557,13 +1676,13 @@ Window {
 
                     background: Rectangle {
                         x: parent.leftPadding; y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                        width: parent.availableWidth; height: 4; radius: 2; color: "#1e293b"
-                        Rectangle { width: parent.parent.visualPosition * parent.width; height: parent.height; radius: 2; color: "#f59e0b" }
+                        width: parent.availableWidth; height: 4; radius: 2; color: theme.bgItemHover
+                        Rectangle { width: parent.parent.visualPosition * parent.width; height: parent.height; radius: 2; color: theme.warning }
                     }
                     handle: Rectangle {
                         x: parent.leftPadding + parent.visualPosition * (parent.availableWidth - width)
                         y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                        width: 20; height: 20; radius: 10; color: "#f59e0b"; border.color: "#fbbf24"
+                        width: 20; height: 20; radius: 10; color: theme.warning; border.color: theme.warning
                     }
                 }
             }
@@ -1571,7 +1690,7 @@ Window {
             // Max Response Tokens
             ColumnLayout {
                 spacing: 8
-                Text { text: "📝 " + t("max_tokens") + ": " + Settings.maxResponseTokens; color: "#94a3b8"; font.pixelSize: 13; font.bold: true }
+                Text { text: "📝 " + t("max_tokens") + ": " + Settings.maxResponseTokens; color: theme.textSecondary; font.pixelSize: 13; font.bold: true }
                 Slider {
                     Layout.fillWidth: true
                     from: 128; to: 8192; stepSize: 128
@@ -1580,13 +1699,13 @@ Window {
 
                     background: Rectangle {
                         x: parent.leftPadding; y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                        width: parent.availableWidth; height: 4; radius: 2; color: "#1e293b"
-                        Rectangle { width: parent.parent.visualPosition * parent.width; height: parent.height; radius: 2; color: "#10b981" }
+                        width: parent.availableWidth; height: 4; radius: 2; color: theme.bgItemHover
+                        Rectangle { width: parent.parent.visualPosition * parent.width; height: parent.height; radius: 2; color: theme.success }
                     }
                     handle: Rectangle {
                         x: parent.leftPadding + parent.visualPosition * (parent.availableWidth - width)
                         y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                        width: 20; height: 20; radius: 10; color: "#10b981"; border.color: "#34d399"
+                        width: 20; height: 20; radius: 10; color: theme.success; border.color: theme.success
                     }
                 }
             }
@@ -1598,7 +1717,7 @@ Window {
                 Layout.fillWidth: true
                 height: 40
                 radius: 8
-                color: clearDataBtn.containsMouse ? "#991b1b" : "#7f1d1d"
+                color: clearDataBtn.containsMouse ? theme.dangerHover : theme.dangerBg
                 
                 Text {
                     text: Settings.language === "ID" ? "Hapus Semua Data" : "Clear All Data"
@@ -1627,13 +1746,13 @@ Window {
                 Layout.fillWidth: true
                 height: 60
                 radius: 12
-                color: "#0f1629"
+                color: theme.bgPanelElevated
 
                 ColumnLayout {
                     anchors.centerIn: parent
                     spacing: 2
-                    Text { text: "🌊 Ohara GPT v" + AppVersion; color: "#94a3b8"; font.pixelSize: 13; Layout.alignment: Qt.AlignHCenter }
-                    Text { text: "Fully Embedded C++ · Offline-First · Privacy-First"; color: "#475569"; font.pixelSize: 10; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: "🌊 Ohara GPT v" + AppVersion; color: theme.textSecondary; font.pixelSize: 13; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: "Fully Embedded C++ · Offline-First · Privacy-First"; color: theme.textSecondary; font.pixelSize: 10; Layout.alignment: Qt.AlignHCenter }
                 }
             }
         }

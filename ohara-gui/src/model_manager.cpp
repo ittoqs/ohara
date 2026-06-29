@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QDirIterator>
 #include <QDebug>
+#include "settings_manager.h"
 
 ModelManager::ModelManager(const QString &modelsDir, QObject *parent)
     : QObject(parent), m_modelsDir(modelsDir),
@@ -20,7 +21,9 @@ ModelManager::~ModelManager()
 
 QString ModelManager::buildDownloadUrl(const QString &repoId, const QString &filename) const
 {
-    return QString("https://huggingface.co/%1/resolve/main/%2").arg(repoId, filename);
+    SettingsManager settings;
+    QString urlTemplate = settings.hfBaseUrl();
+    return urlTemplate.arg(repoId, filename);
 }
 
 // ============== Model Catalog ==============
@@ -152,7 +155,7 @@ void ModelManager::startSingleDownload(const QString &repoId, const QString &fil
         return;
     }
 
-    QNetworkRequest request(QUrl(url));
+    QNetworkRequest request((QUrl(url)));
     request.setHeader(QNetworkRequest::UserAgentHeader, "OharaGPT/1.0");
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                           QNetworkRequest::NoLessSafeRedirectPolicy);

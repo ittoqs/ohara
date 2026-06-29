@@ -2,6 +2,7 @@
 #define DATABASE_MANAGER_H
 
 #include <QObject>
+#include <QThread>
 #include <QString>
 #include <QVariantList>
 #include <QVariantMap>

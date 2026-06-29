@@ -1,5 +1,9 @@
 #include "settings_manager.h"
 #include <QCoreApplication>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDebug>
 
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
@@ -10,6 +14,7 @@ SettingsManager::SettingsManager(QObject *parent)
     m_settings = new QSettings(configPath, QSettings::IniFormat, this);
 
     initTranslations();
+    loadConfig();
 }
 
 void SettingsManager::ensureDirectories()
@@ -198,49 +203,37 @@ QVariantList SettingsManager::getPersonalityPresets() const
     general["id"] = "general";
     general["name"] = isId ? "Asisten Umum" : "General Assistant";
     general["icon"] = "💬";
-    general["prompt"] = isId
-        ? "Kamu adalah asisten AI yang cerdas dan ramah. Jawab pertanyaan dengan jelas, ringkas, dan membantu."
-        : "You are a smart and friendly AI assistant. Answer questions clearly, concisely, and helpfully.";
+    general["prompt"] = systemPrompt("assistant", isId);
 
     QVariantMap coder;
     coder["id"] = "coder";
     coder["name"] = isId ? "Programmer" : "Programmer";
     coder["icon"] = "💻";
-    coder["prompt"] = isId
-        ? "Kamu adalah programmer ahli. Berikan kode yang bersih, efisien, dan terdokumentasi. Jelaskan logika secara singkat."
-        : "You are an expert programmer. Provide clean, efficient, well-documented code. Explain logic briefly.";
+    coder["prompt"] = systemPrompt("coder", isId);
 
     QVariantMap writer;
     writer["id"] = "writer";
     writer["name"] = isId ? "Penulis" : "Writer";
     writer["icon"] = "✍️";
-    writer["prompt"] = isId
-        ? "Kamu adalah penulis profesional. Bantu menulis, mengedit, dan menyempurnakan teks dengan gaya yang menarik dan tepat."
-        : "You are a professional writer. Help write, edit, and polish text with engaging and precise style.";
+    writer["prompt"] = systemPrompt("writer", isId);
 
     QVariantMap translator;
     translator["id"] = "translator";
     translator["name"] = isId ? "Penerjemah" : "Translator";
     translator["icon"] = "🌐";
-    translator["prompt"] = isId
-        ? "Kamu adalah penerjemah profesional. Terjemahkan teks dengan akurat sambil menjaga nuansa dan konteks aslinya."
-        : "You are a professional translator. Translate text accurately while preserving the original nuance and context.";
+    translator["prompt"] = systemPrompt("translator", isId);
 
     QVariantMap analyst;
     analyst["id"] = "analyst";
     analyst["name"] = isId ? "Analis Data" : "Data Analyst";
     analyst["icon"] = "📊";
-    analyst["prompt"] = isId
-        ? "Kamu adalah analis data senior. Bantu menganalisis data, membuat insight, dan menyajikan temuan secara terstruktur."
-        : "You are a senior data analyst. Help analyze data, generate insights, and present findings in a structured way.";
+    analyst["prompt"] = systemPrompt("analyst", isId);
 
     QVariantMap creative;
     creative["id"] = "creative";
     creative["name"] = isId ? "Kreatif" : "Creative";
     creative["icon"] = "🎨";
-    creative["prompt"] = isId
-        ? "Kamu adalah AI kreatif yang imajinatif. Bantu brainstorming, generate ide, dan berpikir di luar kotak."
-        : "You are an imaginative creative AI. Help brainstorm, generate ideas, and think outside the box.";
+    creative["prompt"] = systemPrompt("creative", isId);
 
     presets << general << coder << writer << translator << analyst << creative;
     return presets;
@@ -398,4 +391,42 @@ void SettingsManager::initTranslations()
     m_translationsEn["session"] = "Session";
     m_translationsEn["delete_model_confirm"] = "Are you sure you want to delete this model?";
     m_translationsEn["delete_session_confirm"] = "Are you sure you want to delete this session?";
+}
+
+void SettingsManager::loadConfig() {
+    QString configPath = QCoreApplication::applicationDirPath() + "/config.json";
+    QFile file(configPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        // Fallback for tests/build dir
+        file.setFileName("config.json");
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << "Could not open config.json at" << configPath;
+            return;
+        }
+    }
+    QByteArray data = file.readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (!doc.isNull() && doc.isObject()) {
+        m_config = doc.object();
+    } else {
+        qWarning() << "Invalid JSON in config.json";
+    }
+}
+
+QString SettingsManager::hfBaseUrl() const {
+    if (m_config.contains("huggingface_base_url")) {
+        return m_config["huggingface_base_url"].toString();
+    }
+    return "https://huggingface.co/%1/resolve/main/%2";
+}
+
+QString SettingsManager::systemPrompt(const QString &key, bool isId) const {
+    QString configKey = isId ? "system_prompts_id" : "system_prompts_en";
+    if (m_config.contains(configKey)) {
+        QJsonObject prompts = m_config[configKey].toObject();
+        if (prompts.contains(key)) {
+            return prompts[key].toString();
+        }
+    }
+    return "";
 }

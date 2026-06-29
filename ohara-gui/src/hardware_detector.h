@@ -5,6 +5,7 @@
 #include <QString>
 #include <QVariantMap>
 #include <QTimer>
+#include <QRegularExpression>
 
 class HardwareDetector : public QObject {
     Q_OBJECT

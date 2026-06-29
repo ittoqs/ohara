@@ -1,0 +1,36 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - "dummy_branch" # Change to main later
+  pull_request:
+    branches:
+      - "dummy_branch" # Change to main later
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.2'
+        host: ${{ runner.os == 'Windows' && 'windows' || runner.os == 'macOS' && 'mac' || 'linux' }}
+        target: 'desktop'
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release -j 2
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure
