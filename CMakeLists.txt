@@ -10,3 +10,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 add_subdirectory(ohara-gui)
+
+include(CTest)
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

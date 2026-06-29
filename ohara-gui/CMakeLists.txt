@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ============================================================
 
 # Qt6
-find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets Multimedia REQUIRED)
 
 # llama.cpp via FetchContent
 include(FetchContent)
@@ -23,9 +23,32 @@ FetchContent_Declare(
 
 # Configure llama.cpp build options
 set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_EXAMPLES ON CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_COMMON ON CACHE BOOL "" FORCE)
+set(LLAMA_CURL OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    whisper_cpp
+    GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+)
+set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(whisper_cpp)
+
+FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG v2.11.1
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(pybind11)
+
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # GPU Support — auto-detect
 # CUDA
@@ -37,7 +60,7 @@ endif()
 
 # Vulkan (AMD + Intel + NVIDIA)
 find_package(Vulkan QUIET)
-if(Vulkan_FOUND AND NOT CUDAToolkit_FOUND)
+if(Vulkan_FOUND AND NOT CUDAToolkit_FOUND AND NOT DEFINED GGML_VULKAN)
     set(GGML_VULKAN ON CACHE BOOL "" FORCE)
     message(STATUS "Vulkan found — enabling GPU acceleration")
 endif()
@@ -74,6 +97,10 @@ set(OHARA_SOURCES
     src/inference_engine.h
     src/document_processor.cpp
     src/document_processor.h
+    src/voice_manager.cpp
+    src/voice_manager.h
+    src/script_engine.cpp
+    src/script_engine.h
 )
 
 add_executable(ohara_gpt ${OHARA_SOURCES})
@@ -95,6 +122,9 @@ target_include_directories(ohara_gpt PRIVATE
     ${llama_cpp_SOURCE_DIR}/include
     ${llama_cpp_SOURCE_DIR}/common
     ${llama_cpp_SOURCE_DIR}/ggml/include
+    ${whisper_cpp_SOURCE_DIR}/include
+    ${pybind11_SOURCE_DIR}/include
+    ${Python3_INCLUDE_DIRS}
 )
 
 # ============================================================
@@ -108,8 +138,12 @@ target_link_libraries(ohara_gpt PRIVATE
     Qt6::Network
     Qt6::Sql
     Qt6::Widgets
+    Qt6::Multimedia
     llama
     common
+    whisper
+    Python3::Module
+    Python3::Python
 )
 
 # ============================================================
@@ -131,7 +165,11 @@ endif()
 # ============================================================
 #  Install
 # ============================================================
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 install(TARGETS ohara_gpt
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+install(FILES config.json DESTINATION ${CMAKE_INSTALL_BINDIR})

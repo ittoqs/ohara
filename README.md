@@ -37,15 +37,26 @@ Pre-configured models optimized for different tasks, downloadable directly from 
 | DeepSeek R1 7B | Reasoning | 8 GB | Chain-of-thought reasoning |
 | Qwen 2.5 Coder 14B | Coding (Large) | 16 GB | Advanced software development |
 
+### ☁️ Custom Model Download
+Use the GUI input box to paste any Hugging Face Repo ID and filename to seamlessly download community models!
+
 ### 📄 Local RAG (Document Chat)
 Upload TXT, MD, CSV, or JSON files — they're automatically chunked and indexed using **SQLite FTS5**.
 
 ### 🔒 Privacy First (Offline-First)
 All inference and data processing happen entirely on your local machine. **Zero telemetry**, zero cloud dependencies. Your data never leaves your device.
 
-### 🎨 Dark GUI
-Built with **Qt6/QML**, featuring:
-- Deep navy glassmorphism-inspired design
+### 🎙️ Offline Voice Support
+Integrated with `whisper.cpp`, allowing fully offline voice interactions using local transcription.
+
+### 🐍 Python Scripting
+Embedded Python capabilities via `pybind11` enable power users to create custom scripts and plugins inside Ohara GPT.
+
+### 🎨 Dark & Light GUI Themes
+Built with **Qt6/QML**, featuring dynamic theme switching:
+- Deep navy glassmorphism Dark Mode
+- Clean, responsive Light Mode
+
 - Smooth animations and transitions
 - Responsive layout (sidebar auto-collapses on small screens)
 - Settings drawer with visual sliders

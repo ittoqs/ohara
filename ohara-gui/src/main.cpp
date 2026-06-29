@@ -13,6 +13,8 @@
 #include "model_manager.h"
 #include "inference_engine.h"
 #include "document_processor.h"
+#include "voice_manager.h"
+#include "script_engine.h"
 
 class ClipboardHelper : public QObject {
     Q_OBJECT
@@ -63,6 +65,12 @@ int main(int argc, char *argv[])
     // Document processor (RAG via FTS5)
     DocumentProcessor docProcessor(&dbManager);
 
+    // Voice manager
+    VoiceManager voiceManager;
+
+    // Script engine
+    ScriptEngine scriptEngine;
+
     // Clipboard helper
     ClipboardHelper clipboardHelper;
 
@@ -77,6 +85,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("ModelManager", &modelManager);
     engine.rootContext()->setContextProperty("InferenceEngine", &inferenceEngine);
     engine.rootContext()->setContextProperty("DocProcessor", &docProcessor);
+    engine.rootContext()->setContextProperty("VoiceManager", &voiceManager);
+    engine.rootContext()->setContextProperty("ScriptEngine", &scriptEngine);
     engine.rootContext()->setContextProperty("Clipboard", &clipboardHelper);
 
     // App version for QML
@@ -92,3 +102,4 @@ int main(int argc, char *argv[])
 
     return app.exec();
 }
+#include "main.moc"

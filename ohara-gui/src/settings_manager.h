@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
+#include <QJsonObject>
 
 class SettingsManager : public QObject {
     Q_OBJECT
@@ -67,6 +68,10 @@ public:
     // Personality presets
     Q_INVOKABLE QVariantList getPersonalityPresets() const;
 
+    // Config values
+    Q_INVOKABLE QString hfBaseUrl() const;
+    QString systemPrompt(const QString &key, bool isId = false) const;
+
 signals:
     void languageChanged();
     void themeChanged();
@@ -86,6 +91,9 @@ private:
     QSettings *m_settings;
     QVariantMap m_translationsId;
     QVariantMap m_translationsEn;
+
+    QJsonObject m_config;
+    void loadConfig();
 };
 
 #endif // SETTINGS_MANAGER_H

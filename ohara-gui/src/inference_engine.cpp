@@ -191,7 +191,7 @@ std::string InferenceEngine::buildPrompt(const QVariantList &messages)
 
     // First call to get required buffer size
     int buf_size = llama_chat_apply_template(
-        m_model, nullptr,
+        llama_model_chat_template(m_model, nullptr),
         chat_messages.data(), chat_messages.size(),
         true, nullptr, 0);
 
@@ -210,7 +210,7 @@ std::string InferenceEngine::buildPrompt(const QVariantList &messages)
 
     std::vector<char> buf(buf_size + 1);
     llama_chat_apply_template(
-        m_model, nullptr,
+        llama_model_chat_template(m_model, nullptr),
         chat_messages.data(), chat_messages.size(),
         true, buf.data(), buf.size());
 
@@ -220,10 +220,10 @@ std::string InferenceEngine::buildPrompt(const QVariantList &messages)
 std::string InferenceEngine::tokenToString(int token)
 {
     std::vector<char> buf(32);
-    int n = llama_token_to_piece(m_model, token, buf.data(), buf.size(), 0, false);
+    int n = llama_token_to_piece(llama_model_get_vocab(m_model), token, buf.data(), buf.size(), 0, false);
     if (n < 0) {
         buf.resize(-n);
-        n = llama_token_to_piece(m_model, token, buf.data(), buf.size(), 0, false);
+        n = llama_token_to_piece(llama_model_get_vocab(m_model), token, buf.data(), buf.size(), 0, false);
     }
     return std::string(buf.data(), n > 0 ? n : 0);
 }
@@ -287,7 +287,7 @@ void InferenceEngine::doGenerate(QVariantList messages, int maxTokens,
     // Tokenize
     const int n_prompt_max = m_nCtx - maxTokens;
     std::vector<llama_token> tokens(n_prompt_max);
-    int n_tokens = llama_tokenize(m_model, prompt.c_str(), prompt.length(),
+    int n_tokens = llama_tokenize(llama_model_get_vocab(m_model), prompt.c_str(), prompt.length(),
                                    tokens.data(), tokens.size(), true, true);
 
     if (n_tokens < 0) {
@@ -301,7 +301,7 @@ void InferenceEngine::doGenerate(QVariantList messages, int maxTokens,
     tokens.resize(n_tokens);
 
     // Clear KV cache
-    llama_kv_cache_clear(m_ctx);
+    llama_kv_self_clear(m_ctx);
 
     // Process prompt
     llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
@@ -326,7 +326,7 @@ void InferenceEngine::doGenerate(QVariantList messages, int maxTokens,
     timer.start();
     std::string fullResponse;
     int generated = 0;
-    llama_token eosToken = llama_token_eos(m_model);
+    llama_token eosToken = llama_vocab_eos(llama_model_get_vocab(m_model));
 
     int n_cur = n_tokens;
 
@@ -336,7 +336,7 @@ void InferenceEngine::doGenerate(QVariantList messages, int maxTokens,
         llama_token new_token = llama_sampler_sample(sampler, m_ctx, -1);
 
         // Check for end of sequence
-        if (llama_token_is_eog(m_model, new_token)) break;
+        if (llama_vocab_is_eog(llama_model_get_vocab(m_model), new_token)) break;
 
         std::string piece = tokenToString(new_token);
         fullResponse += piece;
