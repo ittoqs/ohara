@@ -249,6 +249,18 @@ void ModelManager::onDownloadFinished()
 
             delete m_downloadFile;
             m_downloadFile = nullptr;
+
+            // Integrity verification
+            QFile finalFile(finalPath);
+            if (finalFile.open(QIODevice::ReadOnly)) {
+                QCryptographicHash hash(QCryptographicHash::Sha256);
+                if (hash.addData(&finalFile)) {
+                    qDebug() << "ModelManager: SHA-256 for" << filename << "is" << hash.result().toHex();
+                } else {
+                    qWarning() << "ModelManager: Failed to calculate SHA-256 for" << filename;
+                }
+                finalFile.close();
+            }
         }
 
         reply->deleteLater();

@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ============================================================
 
 # Qt6
-find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets Multimedia REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets Multimedia Concurrent REQUIRED)
 
 # llama.cpp via FetchContent
 include(FetchContent)
@@ -32,12 +32,13 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     whisper_cpp
     GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
-    GIT_TAG master
+    GIT_TAG v1.6.0
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
 )
 set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(whisper_cpp)
 
 FetchContent_Declare(
@@ -101,6 +102,9 @@ set(OHARA_SOURCES
     src/voice_manager.h
     src/script_engine.cpp
     src/script_engine.h
+    src/ILlmBackend.h
+    src/LlamaBackend.h
+    src/LlamaBackend.cpp
 )
 
 add_executable(ohara_gpt ${OHARA_SOURCES})
@@ -132,6 +136,7 @@ target_include_directories(ohara_gpt PRIVATE
 # ============================================================
 target_link_libraries(ohara_gpt PRIVATE
     Qt6::Core
+    Qt6::Concurrent
     Qt6::Gui
     Qt6::Qml
     Qt6::Quick
