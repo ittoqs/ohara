@@ -27,12 +27,21 @@ QString ScriptEngine::executeScript(const QString &scriptCode) {
                 if (bdict.contains("__import__")) {
                     bdict["__import__"] = py::none();
                 }
+                if (bdict.contains("eval")) bdict["eval"] = py::none();
+                if (bdict.contains("exec")) bdict["exec"] = py::none();
+                if (bdict.contains("open")) bdict["open"] = py::none();
             } else if (py::hasattr(builtins, "__import__")) {
                 setattr(builtins, "__import__", py::none());
+                if (py::hasattr(builtins, "eval")) setattr(builtins, "eval", py::none());
+                if (py::hasattr(builtins, "exec")) setattr(builtins, "exec", py::none());
+                if (py::hasattr(builtins, "open")) setattr(builtins, "open", py::none());
             }
         } else {
             py::dict bdict;
             bdict["__import__"] = py::none();
+            bdict["eval"] = py::none();
+            bdict["exec"] = py::none();
+            bdict["open"] = py::none();
             globals["__builtins__"] = bdict;
         }
 
