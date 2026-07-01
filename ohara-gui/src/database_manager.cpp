@@ -98,12 +98,7 @@ void DatabaseManager::createTables()
 
     // FTS5 virtual table for document search
     q.exec(R"(
-        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
-            filename,
-            content,
-            chunk_index,
-            tokenize='porter unicode61'
-        )
+        CREATE TABLE IF NOT EXISTS documents_vec (id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT, content TEXT, chunk_index INTEGER, vector BLOB)
     )");
 
     // Settings key-value store
@@ -384,13 +379,11 @@ void DatabaseManager::indexDocument(const QString &filename, const QString &cont
 {
     QSqlDatabase db = getConnection();
 
-    // Remove existing entries for this file
     QSqlQuery del(db);
-    del.prepare("DELETE FROM documents_fts WHERE filename = ?");
+    del.prepare("DELETE FROM documents_vec WHERE filename = ?");
     del.addBindValue(filename);
     del.exec();
 
-    // Chunk and insert
     const int chunkSize = 800;
     const int overlap = 100;
     int chunkIndex = 0;
@@ -399,11 +392,32 @@ void DatabaseManager::indexDocument(const QString &filename, const QString &cont
         QString chunk = content.mid(i, chunkSize).trimmed();
         if (chunk.isEmpty()) continue;
 
+        // Basic character-frequency vectorization (simulating embedding)
+        QByteArray vectorData;
+        int vectorSize = 256;
+        vectorData.resize(vectorSize * sizeof(float));
+        float* vecPtr = reinterpret_cast<float*>(vectorData.data());
+        for (int j = 0; j < vectorSize; ++j) vecPtr[j] = 0.0f;
+
+        for (int j = 0; j < chunk.length(); ++j) {
+            int charIdx = chunk[j].unicode() % vectorSize;
+            vecPtr[charIdx] += 1.0f;
+        }
+
+        // Normalize
+        float norm = 0.0f;
+        for (int j = 0; j < vectorSize; ++j) norm += vecPtr[j] * vecPtr[j];
+        if (norm > 0) {
+            norm = std::sqrt(norm);
+            for (int j = 0; j < vectorSize; ++j) vecPtr[j] /= norm;
+        }
+
         QSqlQuery q(db);
-        q.prepare("INSERT INTO documents_fts (filename, content, chunk_index) VALUES (?, ?, ?)");
+        q.prepare("INSERT INTO documents_vec (filename, content, chunk_index, vector) VALUES (?, ?, ?, ?)");
         q.addBindValue(filename);
         q.addBindValue(chunk);
         q.addBindValue(QString::number(chunkIndex++));
+        q.addBindValue(vectorData);
         q.exec();
     }
 
@@ -414,24 +428,48 @@ QVariantList DatabaseManager::searchDocuments(const QString &query, int limit)
 {
     QSqlDatabase db = getConnection();
     QSqlQuery q(db);
-    q.prepare(R"(
-        SELECT filename, content, rank
-        FROM documents_fts
-        WHERE documents_fts MATCH ?
-        ORDER BY rank
-        LIMIT ?
-    )");
-    q.addBindValue(query);
-    q.addBindValue(limit);
+    q.prepare("SELECT filename, content, vector FROM documents_vec");
 
     QVariantList results;
     if (q.exec()) {
+        // Create query vector
+        int vectorSize = 256;
+        std::vector<float> queryVec(vectorSize, 0.0f);
+        for (int j = 0; j < query.length(); ++j) {
+            int charIdx = query[j].unicode() % vectorSize;
+            queryVec[charIdx] += 1.0f;
+        }
+        float norm = 0.0f;
+        for (int j = 0; j < vectorSize; ++j) norm += queryVec[j] * queryVec[j];
+        if (norm > 0) {
+            norm = std::sqrt(norm);
+            for (int j = 0; j < vectorSize; ++j) queryVec[j] /= norm;
+        }
+
+        QMap<double, QVariantMap> scoredDocs;
+
         while (q.next()) {
             QVariantMap doc;
             doc["filename"] = q.value(0).toString();
             doc["content"] = q.value(1).toString();
-            doc["rank"] = q.value(2).toDouble();
-            results.append(doc);
+
+            QByteArray vecData = q.value(2).toByteArray();
+            const float* vecPtr = reinterpret_cast<const float*>(vecData.constData());
+
+            double dotProduct = 0.0;
+            if (vecData.size() == vectorSize * sizeof(float)) {
+                for(int i=0; i<vectorSize; ++i) {
+                    dotProduct += queryVec[i] * vecPtr[i];
+                }
+            }
+
+            doc["rank"] = -dotProduct; // lower rank value means more similar in this naive implementation
+            scoredDocs.insert(-dotProduct, doc);
+        }
+
+        int count = 0;
+        for (auto it = scoredDocs.begin(); it != scoredDocs.end() && count < limit; ++it, ++count) {
+            results.append(it.value());
         }
     }
     return results;
@@ -441,7 +479,7 @@ void DatabaseManager::deleteDocument(const QString &filename)
 {
     QSqlDatabase db = getConnection();
     QSqlQuery q(db);
-    q.prepare("DELETE FROM documents_fts WHERE filename = ?");
+    q.prepare("DELETE FROM documents_vec WHERE filename = ?");
     q.addBindValue(filename);
     q.exec();
 }
@@ -450,7 +488,7 @@ QVariantList DatabaseManager::getIndexedDocuments()
 {
     QSqlDatabase db = getConnection();
     QSqlQuery q(db);
-    q.exec("SELECT DISTINCT filename, COUNT(*) as chunks FROM documents_fts GROUP BY filename");
+    q.exec("SELECT DISTINCT filename, COUNT(*) as chunks FROM documents_vec GROUP BY filename");
 
     QVariantList docs;
     while (q.next()) {
@@ -502,6 +540,6 @@ void DatabaseManager::clearAllData()
     QSqlQuery q(db);
     q.exec("DELETE FROM messages");
     q.exec("DELETE FROM sessions");
-    q.exec("DELETE FROM documents_fts");
+    q.exec("DELETE FROM documents_vec");
     q.exec("DELETE FROM app_settings");
 }

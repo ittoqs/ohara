@@ -9,6 +9,8 @@
 #include <QMediaFormat>
 #include <QUrl>
 
+struct whisper_context;
+
 class VoiceManager : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool isRecording READ isRecording NOTIFY recordingStatusChanged)

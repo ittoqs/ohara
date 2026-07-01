@@ -17,7 +17,27 @@ ScriptEngine::~ScriptEngine() {
 QString ScriptEngine::executeScript(const QString &scriptCode) {
     qDebug() << "ScriptEngine: Executing script\n" << scriptCode;
     try {
-        py::exec(scriptCode.toStdString());
+        py::dict globals = py::globals();
+
+        // Basic sandboxing: remove dangerous builtins
+        if (globals.contains("__builtins__")) {
+            py::object builtins = globals["__builtins__"];
+            if (py::isinstance<py::dict>(builtins)) {
+                py::dict bdict = builtins.cast<py::dict>();
+                if (bdict.contains("__import__")) {
+                    bdict["__import__"] = py::none();
+                }
+            } else if (py::hasattr(builtins, "__import__")) {
+                setattr(builtins, "__import__", py::none());
+            }
+        } else {
+            py::dict bdict;
+            bdict["__import__"] = py::none();
+            globals["__builtins__"] = bdict;
+        }
+
+        py::dict locals;
+        py::exec(scriptCode.toStdString(), globals, locals);
         return "Script executed successfully";
     } catch (std::exception &e) {
         return QString("Script Error: ") + e.what();
