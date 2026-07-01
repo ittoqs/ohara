@@ -11,6 +11,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Qt6
 find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets Multimedia Concurrent REQUIRED)
 
+# GPU Support — auto-detect
+# CUDA
+find_package(CUDAToolkit QUIET)
+if(CUDAToolkit_FOUND)
+    set(GGML_CUDA ON CACHE BOOL "" FORCE)
+    message(STATUS "CUDA found — enabling GPU acceleration")
+endif()
+
+# Vulkan (AMD + Intel + NVIDIA)
+find_package(Vulkan QUIET)
+if(Vulkan_FOUND AND NOT CUDAToolkit_FOUND AND NOT DEFINED GGML_VULKAN)
+    set(GGML_VULKAN ON CACHE BOOL "" FORCE)
+    message(STATUS "Vulkan found — enabling GPU acceleration")
+endif()
+
+# Metal (macOS)
+if(APPLE)
+    set(GGML_METAL ON CACHE BOOL "" FORCE)
+    message(STATUS "macOS detected — enabling Metal GPU acceleration")
+endif()
+
 # llama.cpp via FetchContent
 include(FetchContent)
 FetchContent_Declare(
@@ -28,6 +49,7 @@ set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_COMMON ON CACHE BOOL "" FORCE)
 set(LLAMA_CURL OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(llama_cpp)
 
 FetchContent_Declare(
     whisper_cpp
@@ -50,29 +72,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(pybind11)
 
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-
-# GPU Support — auto-detect
-# CUDA
-find_package(CUDAToolkit QUIET)
-if(CUDAToolkit_FOUND)
-    set(GGML_CUDA ON CACHE BOOL "" FORCE)
-    message(STATUS "CUDA found — enabling GPU acceleration")
-endif()
-
-# Vulkan (AMD + Intel + NVIDIA)
-find_package(Vulkan QUIET)
-if(Vulkan_FOUND AND NOT CUDAToolkit_FOUND AND NOT DEFINED GGML_VULKAN)
-    set(GGML_VULKAN ON CACHE BOOL "" FORCE)
-    message(STATUS "Vulkan found — enabling GPU acceleration")
-endif()
-
-# Metal (macOS)
-if(APPLE)
-    set(GGML_METAL ON CACHE BOOL "" FORCE)
-    message(STATUS "macOS detected — enabling Metal GPU acceleration")
-endif()
-
-FetchContent_MakeAvailable(llama_cpp)
 
 # ============================================================
 #  Qt Auto-tools
