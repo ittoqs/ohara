@@ -98,12 +98,7 @@ void DatabaseManager::createTables()
 
     // FTS5 virtual table for document search
     q.exec(R"(
-        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
-            filename,
-            content,
-            chunk_index,
-            tokenize='porter unicode61'
-        )
+        CREATE VIRTUAL TABLE IF NOT EXISTS documents USING fts5(filename, content, chunk_index)
     )");
 
     // Settings key-value store
@@ -384,13 +379,11 @@ void DatabaseManager::indexDocument(const QString &filename, const QString &cont
 {
     QSqlDatabase db = getConnection();
 
-    // Remove existing entries for this file
     QSqlQuery del(db);
-    del.prepare("DELETE FROM documents_fts WHERE filename = ?");
+    del.prepare("DELETE FROM documents WHERE filename = ?");
     del.addBindValue(filename);
     del.exec();
 
-    // Chunk and insert
     const int chunkSize = 800;
     const int overlap = 100;
     int chunkIndex = 0;
@@ -400,7 +393,7 @@ void DatabaseManager::indexDocument(const QString &filename, const QString &cont
         if (chunk.isEmpty()) continue;
 
         QSqlQuery q(db);
-        q.prepare("INSERT INTO documents_fts (filename, content, chunk_index) VALUES (?, ?, ?)");
+        q.prepare("INSERT INTO documents (filename, content, chunk_index) VALUES (?, ?, ?)");
         q.addBindValue(filename);
         q.addBindValue(chunk);
         q.addBindValue(QString::number(chunkIndex++));
@@ -414,14 +407,20 @@ QVariantList DatabaseManager::searchDocuments(const QString &query, int limit)
 {
     QSqlDatabase db = getConnection();
     QSqlQuery q(db);
+
+    // Use FTS5 for fast full-text search
     q.prepare(R"(
         SELECT filename, content, rank
-        FROM documents_fts
-        WHERE documents_fts MATCH ?
-        ORDER BY rank
-        LIMIT ?
+        FROM documents
+        WHERE documents MATCH ?
+        ORDER BY rank LIMIT ?
     )");
-    q.addBindValue(query);
+
+    // Basic FTS query syntax parsing can be added,
+    // but for simple cases we just append a wildcard or wrap in quotes
+    QString safeQuery = query;
+    safeQuery.replace("\"", "\"\"");
+    q.addBindValue("\"" + safeQuery + "\"");
     q.addBindValue(limit);
 
     QVariantList results;
@@ -441,7 +440,7 @@ void DatabaseManager::deleteDocument(const QString &filename)
 {
     QSqlDatabase db = getConnection();
     QSqlQuery q(db);
-    q.prepare("DELETE FROM documents_fts WHERE filename = ?");
+    q.prepare("DELETE FROM documents WHERE filename = ?");
     q.addBindValue(filename);
     q.exec();
 }
@@ -450,7 +449,7 @@ QVariantList DatabaseManager::getIndexedDocuments()
 {
     QSqlDatabase db = getConnection();
     QSqlQuery q(db);
-    q.exec("SELECT DISTINCT filename, COUNT(*) as chunks FROM documents_fts GROUP BY filename");
+    q.exec("SELECT DISTINCT filename, COUNT(*) as chunks FROM documents GROUP BY filename");
 
     QVariantList docs;
     while (q.next()) {
@@ -502,6 +501,6 @@ void DatabaseManager::clearAllData()
     QSqlQuery q(db);
     q.exec("DELETE FROM messages");
     q.exec("DELETE FROM sessions");
-    q.exec("DELETE FROM documents_fts");
+    q.exec("DELETE FROM documents");
     q.exec("DELETE FROM app_settings");
 }

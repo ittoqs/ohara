@@ -9,46 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ============================================================
 
 # Qt6
-find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets Multimedia REQUIRED)
-
-# llama.cpp via FetchContent
-include(FetchContent)
-FetchContent_Declare(
-    llama_cpp
-    GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-    GIT_TAG b5460
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
-
-# Configure llama.cpp build options
-set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(LLAMA_BUILD_EXAMPLES ON CACHE BOOL "" FORCE)
-set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
-set(LLAMA_BUILD_COMMON ON CACHE BOOL "" FORCE)
-set(LLAMA_CURL OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    whisper_cpp
-    GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
-    GIT_TAG master
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
-set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(whisper_cpp)
-
-FetchContent_Declare(
-    pybind11
-    GIT_REPOSITORY https://github.com/pybind/pybind11.git
-    GIT_TAG v2.11.1
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(pybind11)
-
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Qml Quick Network Sql Widgets Multimedia Concurrent REQUIRED)
 
 # GPU Support — auto-detect
 # CUDA
@@ -71,7 +32,46 @@ if(APPLE)
     message(STATUS "macOS detected — enabling Metal GPU acceleration")
 endif()
 
+# llama.cpp via FetchContent
+include(FetchContent)
+FetchContent_Declare(
+    llama_cpp
+    GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
+    GIT_TAG b5460
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+)
+
+# Configure llama.cpp build options
+set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_EXAMPLES ON CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_COMMON ON CACHE BOOL "" FORCE)
+set(LLAMA_CURL OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(llama_cpp)
+
+FetchContent_Declare(
+    whisper_cpp
+    GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
+    GIT_TAG v1.6.0
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+)
+set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(whisper_cpp)
+
+FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG v2.11.1
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(pybind11)
+
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # ============================================================
 #  Qt Auto-tools
@@ -101,6 +101,9 @@ set(OHARA_SOURCES
     src/voice_manager.h
     src/script_engine.cpp
     src/script_engine.h
+    src/ILlmBackend.h
+    src/LlamaBackend.h
+    src/LlamaBackend.cpp
 )
 
 add_executable(ohara_gpt ${OHARA_SOURCES})
@@ -132,6 +135,7 @@ target_include_directories(ohara_gpt PRIVATE
 # ============================================================
 target_link_libraries(ohara_gpt PRIVATE
     Qt6::Core
+    Qt6::Concurrent
     Qt6::Gui
     Qt6::Qml
     Qt6::Quick

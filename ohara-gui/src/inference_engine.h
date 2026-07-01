@@ -5,13 +5,14 @@
 #include <QString>
 #include <QVariantList>
 #include <QMutex>
-#include <QThread>
+#include <QThreadPool>
+#include <QtConcurrent>
 #include <atomic>
 
 // Forward declarations for llama.cpp types
-struct llama_model;
-struct llama_context;
 struct llama_sampler;
+class ILlmBackend;
+class LlamaBackend;
 
 class InferenceEngine : public QObject {
     Q_OBJECT
@@ -72,8 +73,7 @@ private:
     std::string buildPrompt(const QVariantList &messages);
     std::string tokenToString(int token);
 
-    llama_model *m_model = nullptr;
-    llama_context *m_ctx = nullptr;
+    LlamaBackend *m_backend = nullptr;
     QString m_modelPath;
     QString m_modelName;
     int m_nCtx = 4096;
@@ -82,9 +82,10 @@ private:
     std::atomic<bool> m_stopRequested{false};
     double m_tokensPerSecond = 0.0;
     int m_contextUsed = 0;
+    int m_prev_n_tokens = 0;
 
     QMutex m_modelMutex;
-    QThread *m_workerThread = nullptr;
+
 };
 
 #endif // INFERENCE_ENGINE_H

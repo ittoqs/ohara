@@ -249,6 +249,57 @@ void ModelManager::onDownloadFinished()
 
             delete m_downloadFile;
             m_downloadFile = nullptr;
+
+            // Integrity verification
+            QFile finalFile(finalPath);
+            bool hashValid = false;
+            if (finalFile.open(QIODevice::ReadOnly)) {
+                QCryptographicHash hash(QCryptographicHash::Sha256);
+                if (hash.addData(&finalFile)) {
+                    QString calculatedHash = hash.result().toHex();
+                    qDebug() << "ModelManager: SHA-256 for" << filename << "is" << calculatedHash;
+
+                    QMap<QString, QString> expectedHashes = {
+                        {"tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf", "d2b4515569429ce52db580327f293b132e0e92759e9c97b81b2413727bd3d919"},
+                        {"Phi-3-mini-4k-instruct-q4.gguf", "3ef90998a4da07f59d575c3f3099908cfd2946c59b2da01da79717e1329a738f"},
+                        {"Meta-Llama-3-8B-Instruct.Q4_K_M.gguf", "81c03bf47fb6f6b52a4cf543415951d91ebef2ff9f074d0eaf3a9437a9f93ba9"},
+                        {"ggml-model-q4_k.gguf", "a6eebf230cf82bd3bcf69f52f3062325c3453b53c5e8f498ba468160ccffc2a6"},
+                        {"mmproj-model-f16.gguf", "5dbfa01e66cce0f622be3c16dddd3c9b97b0a88b56f8f17eb231365ed83971e4"},
+                        {"qwen2.5-coder-7b-instruct-q4_k_m.gguf", "dcfd6778f307eb8ba342d3be486a43878b47a95da5b967a5b3a4aeb61c4de4ba"},
+                        {"DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf", "d07b3ddb181dbbda64101eb6577decfb6038a8df07d1bd21966a0d4db0cc3db0"},
+                        {"qwen2.5-coder-14b-instruct-q4_k_m.gguf", "649b552308cde20ff161ad0d5fc2748b81206cf3a7fc4d662dfdb8724d100062"}
+                    };
+
+                    if (expectedHashes.contains(filename)) {
+                        if (calculatedHash != expectedHashes[filename]) {
+                            qWarning() << "ModelManager: Hash mismatch for" << filename << "- expected" << expectedHashes[filename];
+                        } else {
+                            qDebug() << "ModelManager: Hash valid for" << filename;
+                            hashValid = true;
+                        }
+                    } else {
+                        qDebug() << "ModelManager: No expected hash configured for" << filename << "- skipping verification";
+                        hashValid = true;
+                    }
+                } else {
+                    qWarning() << "ModelManager: Failed to calculate SHA-256 for" << filename;
+                }
+                finalFile.close();
+            } else {
+                 qWarning() << "ModelManager: Failed to open file for SHA-256 calculation:" << filename;
+            }
+
+            if (!hashValid) {
+                QFile::remove(finalPath);
+                emit downloadError(filename, "Hash verification failed. File is corrupted or tampered with.");
+                reply->deleteLater();
+                m_currentDownload = nullptr;
+                m_currentFilename.clear();
+                m_downloadProgressValue = 0.0;
+                emit downloadingChanged();
+                emit downloadProgressChanged();
+                return;
+            }
         }
 
         reply->deleteLater();
