@@ -49,9 +49,9 @@ All inference and data processing happen entirely on your local machine. **Zero 
 ### 🎙️ Offline Voice Support
 Integrated with `whisper.cpp`, allowing fully offline voice interactions using local transcription. **Benefit:** Users can give voice commands to the AI assistant securely without internet connection or third-party tracking.
 
-### 🐍 Python Scripting:** Embedded via `pybind11` to enable power users to create custom scripts and plugins safely within a sandboxed environment. **Benefit:** Power users and developers can customize their workflow and build powerful extensions directly into the application.
-### 🌐 JavaScript Runtime:** Powered natively via Qt6 `QJSEngine` providing a secure-by-default execution environment without requiring external dependencies like Node.js. **Benefit:** Developers can safely run dynamic script logic in an isolated environment with zero direct access to the operating system or file system.
-### ⚡ WebAssembly Sandbox:** Integrated via a lightweight `wasm3` interpreter to execute low-level binary code safely within a strict sandbox. **Benefit:** When the AI generates code in languages like C, Rust, or Go, that code can be compiled to WebAssembly and executed locally instantly—completely eliminating the risk of compromising the user's operating system.
+- **🐍 Python Scripting:** Embedded via `pybind11` to enable power users to create custom scripts and plugins safely within a sandboxed environment. **Benefit:** Power users and developers can customize their workflow and build powerful extensions directly into the application.
+- **🌐 JavaScript Runtime:** Powered natively via Qt6 `QJSEngine` providing a secure-by-default execution environment without requiring external dependencies like Node.js. **Benefit:** Developers can safely run dynamic script logic in an isolated environment with zero direct access to the operating system or file system.
+- **⚡ WebAssembly Sandbox:** Integrated via a lightweight `wasm3` interpreter to execute low-level binary code safely within a strict sandbox. **Benefit:** When the AI generates code in languages like C, Rust, or Go, that code can be compiled to WebAssembly and executed locally instantly—completely eliminating the risk of compromising the user's operating system.
 
 ### 🎨 Dark & Light GUI Themes
 Built with **Qt6/QML**, featuring dynamic theme switching:
