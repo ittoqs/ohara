@@ -47,10 +47,10 @@ Upload TXT, MD, CSV, or JSON files — they're automatically chunked and indexed
 All inference and data processing happen entirely on your local machine. **Zero telemetry**, zero cloud dependencies. Your data never leaves your device.
 
 ### 🎙️ Offline Voice Support
-Integrated with `whisper.cpp`, allowing fully offline voice interactions using local transcription.
+Integrated with `whisper.cpp`, allowing fully offline voice interactions using local transcription. **Benefit:** Users can give voice commands to the AI assistant securely without internet connection or third-party tracking.
 
 ### 🐍 Python Scripting
-Embedded Python capabilities via `pybind11` enable power users to create custom scripts and plugins inside Ohara GPT.
+Embedded Python capabilities via `pybind11` enable power users to create custom scripts and plugins inside Ohara GPT safely within a sandboxed environment. **Benefit:** Power users and developers can customize their workflow and build powerful extensions directly into the application.
 
 ### 🎨 Dark & Light GUI Themes
 Built with **Qt6/QML**, featuring dynamic theme switching:
@@ -103,16 +103,22 @@ GPU support is auto-detected during build:
 ```
 ohara/
 ├── CMakeLists.txt              # Root build
+├── tests/                      # Automated QtTest suite
 ├── ohara-gui/
 │   ├── CMakeLists.txt          # GUI build + llama.cpp FetchContent
+│   ├── config.json             # API base URLs, system prompts, configurations
 │   ├── src/
 │   │   ├── main.cpp            # Application entry + component wiring
 │   │   ├── inference_engine.*  # llama.cpp wrapper (model loading, generation)
+│   │   ├── ILlmBackend.h       # Interface abstraction for LLM backend
+│   │   ├── LlamaBackend.*      # llama.cpp specific backend implementation
 │   │   ├── database_manager.*  # SQLite WAL + FTS5 (sessions, messages, RAG)
 │   │   ├── model_manager.*     # HuggingFace model download + management
 │   │   ├── settings_manager.*  # User prefs, i18n, config persistence
 │   │   ├── hardware_detector.* # CPU/RAM/GPU/Disk detection
-│   │   └── document_processor.*# Document → FTS5 indexing for RAG
+│   │   ├── document_processor.*# Document → FTS5 indexing for RAG
+│   │   ├── voice_manager.*     # whisper.cpp integration for offline voice
+│   │   └── script_engine.*     # pybind11 Python scripting integration
 │   └── qml/
 │       └── main.qml            # Complete GUI
 ```
