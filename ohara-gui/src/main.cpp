@@ -15,6 +15,8 @@
 #include "document_processor.h"
 #include "voice_manager.h"
 #include "script_engine.h"
+#include "js_engine.h"
+#include "wasm_engine.h"
 
 class ClipboardHelper : public QObject {
     Q_OBJECT
@@ -71,6 +73,12 @@ int main(int argc, char *argv[])
     // Script engine
     ScriptEngine scriptEngine;
 
+    // JS engine
+    JsEngine jsEngine;
+
+    // Wasm engine
+    WasmEngine wasmEngine;
+
     // Clipboard helper
     ClipboardHelper clipboardHelper;
 
@@ -87,6 +95,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("DocProcessor", &docProcessor);
     engine.rootContext()->setContextProperty("VoiceManager", &voiceManager);
     engine.rootContext()->setContextProperty("ScriptEngine", &scriptEngine);
+    engine.rootContext()->setContextProperty("JsEngine", &jsEngine);
+    engine.rootContext()->setContextProperty("WasmEngine", &wasmEngine);
     engine.rootContext()->setContextProperty("Clipboard", &clipboardHelper);
 
     // App version for QML

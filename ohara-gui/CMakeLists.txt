@@ -71,6 +71,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
+FetchContent_Declare(
+    wasm3
+    GIT_REPOSITORY https://github.com/wasm3/wasm3.git
+    GIT_TAG v0.5.0
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(wasm3)
+
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # ============================================================
@@ -101,6 +109,10 @@ set(OHARA_SOURCES
     src/voice_manager.h
     src/script_engine.cpp
     src/script_engine.h
+    src/js_engine.cpp
+    src/js_engine.h
+    src/wasm_engine.cpp
+    src/wasm_engine.h
     src/ILlmBackend.h
     src/LlamaBackend.h
     src/LlamaBackend.cpp
@@ -127,6 +139,7 @@ target_include_directories(ohara_gpt PRIVATE
     ${llama_cpp_SOURCE_DIR}/ggml/include
     ${whisper_cpp_SOURCE_DIR}/include
     ${pybind11_SOURCE_DIR}/include
+    ${wasm3_SOURCE_DIR}/source
     ${Python3_INCLUDE_DIRS}
 )
 
@@ -146,6 +159,7 @@ target_link_libraries(ohara_gpt PRIVATE
     llama
     common
     whisper
+    m3
     Python3::Module
     Python3::Python
 )
